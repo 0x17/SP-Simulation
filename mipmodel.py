@@ -1,6 +1,6 @@
-#import os
-#import sys
-#sys.path.append(os.environ['GUROBI_HOME'] + '\\python35\\lib')
+import os
+import sys
+sys.path.append(os.environ['GUROBI_HOME'] + '\\python35\\lib')
 
 from gurobipy import *
 import gurobipy

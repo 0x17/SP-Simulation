@@ -1,7 +1,7 @@
 import simulation
 import evaluation
 import helpers
-import mipmodel
+#import mipmodel
 
 n_tries = 1000
 
@@ -32,11 +32,12 @@ def run_solver():
 	#sim = simulation.TwoClassSimulation('data_normalized.json')
 	sim = simulation.MultiClassSimulation()
 	scenarios = sim.generate_scenarios(n_tries)
-	mipmodel.solve(sim, scenarios)
+#	mipmodel.solve(sim, scenarios)
 
 def main():
 	#run_littlewood_example()
 	run_3d_plot()
-	run_solver()
+	#run_solver()
+	#run_2d_plot()
 
 main()
