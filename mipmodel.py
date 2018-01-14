@@ -3,10 +3,8 @@ import sys
 sys.path.append(os.environ['GUROBI_HOME'] + '\\python35\\lib')
 
 from gurobipy import *
-import gurobipy
 import numpy as np
 import math
-import sys
 
 def solve(sim, dsj):
     def printStatus(objVal, bcj, njs, rcapjs, kjs):
