@@ -11,7 +11,7 @@ def extract_area_from_excel_doc(fn, topleftcell, bottomrightcell):
 
 def obj_from_matrix(mx):
     obj = {}
-    for i in range(len(mx)):
+    for i in range(1, len(mx)):
         entry = obj[mx[i][0]] = {}
         for j in range(1, len(mx[0])):
             entry[mx[0][j]] = mx[i][j]
