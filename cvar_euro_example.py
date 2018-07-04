@@ -1,3 +1,4 @@
+import json
 import math
 import numpy as np
 
@@ -8,24 +9,36 @@ rj = [ 1 ] * 3
 cj = [ 1, 2, 3 ]
 C = 12
 
-bin_nj = [12, 6, 4]
-bin_pj = [0.25, 0.33, 0.6]
+muj = [ 3, 2, 1 ]
+sigmaj = [ 0.1 ] * 3
 
-assert(len(rj) == len(cj) == len(bin_nj) == len(bin_pj) == J)
-
-'''scenarios = [
+scenarios = [
     [6, 1, 5],
     [0, 0, 12],
-    [0, 5, 12],
-    [2, 3, 2],
-]'''
+    [0, 4, 12],
+    [2, 5, 2]
+]
 
-def pick_demands(j): return np.random.binomial(bin_nj[j], bin_pj[j])
+def fill_from_json(fn):
+    global J, rj, cj, C, muj, sigmaj
+    with open(fn, 'r') as fp:
+        obj = json.load(fp)
+        C = obj['capacity']
+        def cl(j,prop): return obj['clients'][j][prop]
+        J = len(obj['clients'])
+        clrng = range(J)
+        def extract_cl(keys): return [ [ cl(j, key) for j in clrng ] for key in keys ]
+        rj, cj, sigmaj, muj = extract_cl(['revenuePerReq', 'consumptionPerReq', 'devD', 'expD'])
+
+#fill_from_json('C:\\Users\\a.schnabel\\Seafile\\Dropbox\\SFB\\ServicePortfolios\\PyInstanceGenerator\\testset\\instance1.json')
+
+def pick_demands(j): return max(0, int(round(np.random.normal(muj[j], sigmaj[j]))))
 def pick_scenario(): return [ pick_demands(j) for j in range(J) ]
 
-scenarios = [ pick_scenario() for s in range(150) ]
-
+#scenarios = [ pick_scenario() for s in range(4) ]
 assert(all(len(scen) == J for scen in scenarios))
+
+scenario_indices = range(len(scenarios))
 
 def djs(j, s): return scenarios[s][j]
 
@@ -42,12 +55,21 @@ def accept_vector(bcj, s):
 def revenue(bcj, s):
     return np.dot(accept_vector(bcj, s), rj)
 
-def avg_revenue(bcj): return sum(revenue(bcj, s) for s in range(len(scenarios))) / len(scenarios)
-def min_revenue(bcj): return min(revenue(bcj, s) for s in range(len(scenarios)))
+def avg_revenue(bcj): return sum(revenue(bcj, s) for s in scenario_indices) / len(scenarios)
+def min_revenue(bcj): return min(revenue(bcj, s) for s in scenario_indices)
+
+def objective_with_cvar(bcj):
+    global alpha, psi
+    num_worst = int(round((1-alpha)*len(scenarios)))
+    revenues = [ revenue(bcj, s) for s in scenario_indices ]
+    revenues.sort()
+    average_total = sum(revenues) / len(scenarios)
+    cvar = sum(revenues[0:num_worst+1])/num_worst
+    return psi * average_total + (1-psi) * cvar
 
 def print_stats_for_bl(bcj):
     print(f'Booking limits = {bcj}')
-    for s in range(len(scenarios)):
+    for s in scenario_indices:
         print(f'Scenario {s}={scenarios[s]}, Accepts={accept_vector(bcj, s)}, Revenue={revenue(bcj, s)}')
     print(f'Average revenue = {avg_revenue(bcj)}, Minimum revenue = {min_revenue(bcj)}')
 
@@ -68,13 +90,19 @@ def full_enum(obj):
                 best_sol = bcj
     return best_sol, best_obj
 
-print('Optimize for average')
-sol, _ = full_enum(avg_revenue)
+#print('Optimize for average')
+#sol, _ = full_enum(avg_revenue)
+#print_stats_for_bl(sol)
+
+print('Optimize for cvar')
+alpha = 0.5
+psi = 0.0
+sol, _ = full_enum(objective_with_cvar)
 print_stats_for_bl(sol)
 
 #print('Optimize for min')
 #sol, _ = full_enum(min_revenue)
 #print_stats_for_bl(sol)
 
-#print_stats_for_bl([12, 10, 6])
-#print_stats_for_bl([12, 12, 0])
+#print_stats_for_bl([12, 11, 3])
+#print_stats_for_bl([12, 12, 12])
